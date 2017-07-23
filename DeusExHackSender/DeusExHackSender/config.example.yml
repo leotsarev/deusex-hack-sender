@@ -1,0 +1,9 @@
+﻿#Copy this file to config.yml and input credentials
+credentials:
+  endpoint: http://joinrpg.ru
+  login: user@example.com
+  password: XXXXX
+game:
+  project_id: 78
+assets:
+  folder: C:\Deus
