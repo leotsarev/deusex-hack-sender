@@ -1,15 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml;
 using DeusExHackSender.JoinRpg;
-using JetBrains.Annotations;
 using log4net;
 using log4net.Appender;
-using log4net.Config;
-using log4net.Core;
 using log4net.Layout;
 using log4net.Repository.Hierarchy;
 using MailKit.Net.Smtp;
@@ -32,7 +27,7 @@ namespace DeusExHackSender
 
       
       var settings = SettingsLoader.GetSettings();
-      ConfigureLogging(settings);
+      ConfigureLogging();
       log.Info("Start");
       
       var assetHelper = new AssetHelper(settings);
@@ -50,7 +45,7 @@ namespace DeusExHackSender
       {
         log.Info($"Loading data about character {characterHeader.CharacterId}");
         var character = await client.GetCharacter(characterHeader.CharacterId);
-        if (character.InGame || true)
+        if (character.InGame)
         {
           await assetHelper.MarkToSendById(characterHeader.CharacterId);
         }
@@ -67,9 +62,9 @@ namespace DeusExHackSender
       Console.ReadLine();
     }
 
-    private static void ConfigureLogging(DehsSettings settings)
+    private static void ConfigureLogging()
     {
-      var repo = log4net.LogManager.CreateRepository(
+      var repo = LogManager.CreateRepository(
         "test", typeof(Hierarchy));
 
       var hierarchy = (Hierarchy) repo;
@@ -101,7 +96,7 @@ namespace DeusExHackSender
       var message = new MimeMessage();
       message.From.Add(new MailboxAddress(settings.FromName, settings.FromEmail));
       message.To.Add(new MailboxAddress(email, email + "@" + settings.EmailServer));
-      message.Subject = "Новые программы для тебя — КЛИКАЙ БЫСТРЕЙ";
+      message.Subject = "Хакерский аккаунт и стартовый набор кодов";
 
       message.Body = new TextPart("plain")
       {
