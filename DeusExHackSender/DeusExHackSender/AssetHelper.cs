@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace DeusExHackSender
 {
@@ -67,7 +68,7 @@ namespace DeusExHackSender
       GetAllFiles(string folder) =>
       await Task.Run(() => new DirectoryInfo(folder).GetFileSystemInfos("*.txt").ToList());
 
-    public async Task SendAllFiles(Func<FileSystemInfo, int, Task<bool>> sender)
+    public async Task SendAllFiles([InstantHandle] Func<FileSystemInfo, int, Task<bool>> sender)
     {
       var files = await GetAllFiles(PendingFolder);
 

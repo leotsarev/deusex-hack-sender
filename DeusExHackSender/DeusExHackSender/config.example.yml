@@ -7,3 +7,14 @@ game:
   project_id: 78
 assets:
   folder: C:\Deus
+fields:
+  email: 1905
+email:
+  from_email: cyberspace@alice.digital
+  from_name: cyberspace
+  server: alice.digital
+smtp:
+  host: smtp.mailtrap.io
+  login: abf1fd4eb47b8e
+  password: b15cac3aad6814
+  port: 25
