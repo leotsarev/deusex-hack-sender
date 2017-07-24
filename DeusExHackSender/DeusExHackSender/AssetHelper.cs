@@ -85,7 +85,10 @@ namespace DeusExHackSender
         }
       }
 
-      await ProcessAllFiles(files, SendFile);
+      foreach (var file in files)
+      {
+        await SendFile(file);
+      }
     }
   }
 }
