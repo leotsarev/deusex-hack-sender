@@ -14,52 +14,59 @@ namespace DeusExHackSender
 {
   static class Program
   {
-    static void Main()
-    {
-      MainAsync().GetAwaiter().GetResult();
-    }
+    static void Main() => MainAsync().GetAwaiter().GetResult();
 
-    private static readonly ILog log = LogManager.GetLogger("test", typeof(Hierarchy));
+    private static readonly ILog Log = LogManager.GetLogger("test", typeof(Hierarchy));
 
     private static async Task MainAsync()
     {
-      
 
-      
+
+
       var settings = SettingsLoader.GetSettings();
       ConfigureLogging();
-      log.Info("Start");
-      
+      Log.Info("Start");
+
       var assetHelper = new AssetHelper(settings);
-
-      var characterIdToMonitor = assetHelper.GetCharactersToMonitor();
-
-      log.InfoFormat("Characters to monitor: {0}", characterIdToMonitor.Count);
-
       var client = await JoinRpgFacade.CreateClient(settings);
 
+      var sender = Task.Run(async () => await SendAllFles(settings, assetHelper, client, settings));
+
+    var characterIdToMonitor = assetHelper.GetCharactersToMonitor();
+
+      Log.InfoFormat("Characters to monitor: {0}", characterIdToMonitor.Count);
+
+     
       var characters = await client.GetModifiedCharacters(new DateTime(2017, 07, 21));
 
       foreach (var characterHeader in characters.Where(
         c => characterIdToMonitor.Contains(c.CharacterId)))
       {
-        log.Info($"Loading data about character {characterHeader.CharacterId}");
+        Log.Info($"Loading data about character {characterHeader.CharacterId}");
         var character = await client.GetCharacter(characterHeader.CharacterId);
         if (character.InGame)
         {
+          Log.Info($"Character in game {characterHeader.CharacterId}");
           await assetHelper.MarkToSendById(characterHeader.CharacterId);
         }
       }
 
-      using (var mailClient = new MailClient(settings))
+      await sender;
+
+      //Run again
+      await SendAllFles(settings, assetHelper, client, settings);
+    }
+
+    private static async Task SendAllFles(DehsSettings settings1, AssetHelper assetHelper,
+      JoinRpgClient joinRpgClient, DehsSettings settings)
+    {
+      using (var mailClient = new MailClient(settings1))
       {
         mailClient.Connect();
         await assetHelper.SendAllFiles(
-          (file, characterId) => SendFileToCharacter(client, characterId, file, settings, mailClient));
+          (file, characterId) => SendFileToCharacter(joinRpgClient, characterId, file, settings,
+            mailClient));
       }
-      
-
-      Console.ReadLine();
     }
 
     private static void ConfigureLogging()
@@ -80,31 +87,42 @@ namespace DeusExHackSender
     private static async Task<bool> SendFileToCharacter(JoinRpgClient joinRpgClient,
       int characterId, FileSystemInfo file, DehsSettings settings, MailClient mailClient)
     {
-      log.Info($"[{characterId}] File {file.Name}");
+      Log.Info($"[{characterId}] File {file.Name}");
       var character = await joinRpgClient.GetCharacter(characterId);
       
       var email = character.Fields
         .SingleOrDefault(field => field.ProjectFieldId == settings.EmailFieldId)?.Value;
 
-      log.Info($"[{characterId}] Email {email}");
+      Log.Info($"[{characterId}] Email {email} ready, applying delay");
+
+      await Task.Delay(20* 1000);
 
       if (string.IsNullOrWhiteSpace(email))
       {
         return false;
       }
 
-      var message = new MimeMessage();
-      message.From.Add(new MailboxAddress(settings.FromName, settings.FromEmail));
-      message.To.Add(new MailboxAddress(email, email + "@" + settings.EmailServer));
-      message.Subject = "Хакерский аккаунт и стартовый набор кодов";
-
-      message.Body = new TextPart("plain")
+      try
       {
-        Text = File.ReadAllText(file.FullName)
-      };
 
-      await mailClient.SendAsync(message);
-      log.Info("Send success");
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(settings.FromName, settings.FromEmail));
+        message.To.Add(new MailboxAddress(email, email + "@" + settings.EmailServer));
+        message.Subject = "Хакерский аккаунт и стартовый набор кодов";
+
+        message.Body = new TextPart("plain")
+        {
+          Text = File.ReadAllText(file.FullName)
+        };
+
+        await mailClient.SendAsync(message);
+      }
+      catch (Exception exception)
+      {
+        Log.Warn($"Failed to send to address {email}. Reason {exception}");
+        return false;
+      }
+      Log.Info("Send success");
       return true;
     }
   }

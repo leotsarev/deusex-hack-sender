@@ -62,7 +62,7 @@ namespace DeusExHackSender
 
     private static async Task<IReadOnlyCollection<FileSystemInfo>>
       GetCharacterFiles(int characterId, string folder) => 
-      await Task.Run(() => new DirectoryInfo(folder).GetFileSystemInfos($"{characterId}.*.txt").ToList());
+      await Task.Run(() => new DirectoryInfo(folder).GetFileSystemInfos($"{characterId}.*txt").ToList());
 
     private static async Task<IReadOnlyCollection<FileSystemInfo>>
       GetAllFiles(string folder) =>

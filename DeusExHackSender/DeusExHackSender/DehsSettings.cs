@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace DeusExHackSender
+﻿namespace DeusExHackSender
 {
   public class DehsSettings
   {
